@@ -1,0 +1,9 @@
+
+{
+  "name": "Nexus CRM - Sales & LinkedIn Automation Hub",
+  "description": "A high-performance CRM with integrated sales pipelines, Dux-Soup automation handling, and AI-powered lead analysis. Built for modern sales teams using local-first storage.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
