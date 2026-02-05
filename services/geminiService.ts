@@ -1,9 +1,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Lead } from "../types";
+import { Lead, Stage } from "../types";
+
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateFollowUpEmail = async (lead: Lead) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -17,7 +19,7 @@ export const generateFollowUpEmail = async (lead: Lead) => {
 };
 
 export const analyzeLeadQuality = async (lead: Lead) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -40,7 +42,6 @@ export const analyzeLeadQuality = async (lead: Lead) => {
         }
       }
     });
-    
     if (response.text) {
       const data = JSON.parse(response.text);
       return `Quality Score: ${data.score}/100 — ${data.recommendation}`;
@@ -52,9 +53,42 @@ export const analyzeLeadQuality = async (lead: Lead) => {
   }
 };
 
+export const parseLinkedInData = async (rawData: string) => {
+  const ai = getAI();
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Extract lead information from this input. 
+      Input can be a LinkedIn URL (e.g., https://linkedin.com/in/username), raw text from a profile, or CSV data from Dux-Soup.
+      If it's just a URL, try to infer the full name from the URL slug and set company to 'LinkedIn Prospect'.
+      If it's a CSV, look for headers like 'FirstName', 'LastName', 'Company', 'Email'.
+      Data: "${rawData}"`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            company: { type: Type.STRING },
+            email: { type: Type.STRING },
+            linkedinUrl: { type: Type.STRING },
+            value: { type: Type.NUMBER, description: "Estimate a deal value based on their company/role if possible, default to 5000" },
+            notes: { type: Type.STRING, description: "A summary of who they are and why they are a lead" }
+          },
+          required: ["name", "company"]
+        }
+      }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("AI Parsing Error:", error);
+    throw error;
+  }
+};
+
 export const fixGrammar = async (text: string) => {
   if (!text || text.trim().length < 5) return text;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -67,14 +101,12 @@ export const fixGrammar = async (text: string) => {
 };
 
 export const suggestNextSteps = async (lead: Lead) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+  const ai = getAI();
   const historyText = lead.interactions.map(i => `[${i.type} on ${i.timestamp}]: ${i.content}`).join('\n');
   const prompt = `Based on the following lead info and history, suggest 2-3 specific next-step tasks.
   Lead: ${lead.name} at ${lead.company} (Stage: ${lead.stage})
   Notes: ${lead.notes}
   History: ${historyText}`;
-
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',

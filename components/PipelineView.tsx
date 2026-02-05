@@ -11,23 +11,16 @@ import {
   Sparkles,
   ChevronRight,
   ListTodo,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react';
-import LeadModal from './LeadModal';
 import { generateFollowUpEmail } from '../services/geminiService';
 
 const PipelineView: React.FC = () => {
-  const { filteredLeads, updateLead } = useApp();
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { filteredLeads, updateLead, openLeadModal } = useApp();
   const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
 
   const getLeadsByStage = (stage: Stage) => filteredLeads.filter(l => l.stage === stage);
-
-  const handleLeadClick = (lead: Lead) => {
-    setSelectedLead(lead);
-    setIsModalOpen(true);
-  };
 
   const handleAIAction = async (e: React.MouseEvent, lead: Lead) => {
     e.stopPropagation();
@@ -91,14 +84,13 @@ const PipelineView: React.FC = () => {
               <div className="flex-1 overflow-y-auto px-3 space-y-3 custom-scrollbar">
                 {leads.map(lead => {
                   const pendingTasks = lead.tasks?.filter(t => !t.completed) || [];
-                  const highPriorityTask = pendingTasks.find(t => t.priority === 'High');
 
                   return (
                     <div 
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead.id)}
-                      onClick={() => handleLeadClick(lead)}
+                      onClick={() => openLeadModal(lead.id)}
                       className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 cursor-grab active:cursor-grabbing transition-all group"
                     >
                       <div className="flex justify-between items-start mb-4">
@@ -114,16 +106,34 @@ const PipelineView: React.FC = () => {
                         </button>
                       </div>
 
-                      {/* Action Items Indicator */}
+                      {/* Pending Action Items List */}
                       {pendingTasks.length > 0 && (
-                        <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 border ${highPriorityTask ? 'bg-red-50/50 border-red-100' : 'bg-orange-50/50 border-orange-100'}`}>
-                           <ListTodo size={14} className={highPriorityTask ? 'text-red-500' : 'text-orange-500'} />
-                           <div className="flex-1 min-w-0">
-                              <p className={`text-[10px] font-bold truncate ${highPriorityTask ? 'text-red-800' : 'text-orange-800'}`}>
-                                {highPriorityTask ? highPriorityTask.title : `${pendingTasks.length} pending actions`}
-                              </p>
+                        <div className="mb-4 space-y-2">
+                           <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 px-1 mb-1.5">
+                              <ListTodo size={10} /> Pending Actions
                            </div>
-                           {highPriorityTask && <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>}
+                           {pendingTasks.slice(0, 3).map(task => (
+                             <div 
+                                key={task.id} 
+                                onClick={(e) => { e.stopPropagation(); openLeadModal(lead.id, 'tasks'); }}
+                                className={`p-2 rounded-xl flex items-center justify-between border cursor-pointer hover:scale-[1.02] transition-transform ${task.priority === 'High' ? 'bg-red-50/50 border-red-100' : 'bg-orange-50/50 border-orange-100'}`}
+                             >
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <p className={`text-[9px] font-bold truncate ${task.priority === 'High' ? 'text-red-800' : 'text-orange-800'}`}>
+                                    {task.title}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                   <Clock size={8} className={task.priority === 'High' ? 'text-red-500' : 'text-orange-500'} />
+                                   <span className={`text-[8px] font-black ${task.priority === 'High' ? 'text-red-600' : 'text-orange-600'}`}>
+                                      {new Date(task.targetDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                   </span>
+                                </div>
+                             </div>
+                           ))}
+                           {pendingTasks.length > 3 && (
+                             <p className="text-[8px] font-bold text-slate-400 text-center uppercase tracking-widest mt-1">+{pendingTasks.length - 3} more actions</p>
+                           )}
                         </div>
                       )}
 
@@ -159,14 +169,6 @@ const PipelineView: React.FC = () => {
           );
         })}
       </div>
-      
-      {selectedLead && (
-        <LeadModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          lead={selectedLead}
-        />
-      )}
     </div>
   );
 };

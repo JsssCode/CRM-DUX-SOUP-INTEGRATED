@@ -20,7 +20,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const Dashboard: React.FC = () => {
-  const { state } = useApp();
+  const { state, openLeadModal } = useApp();
 
   const totalValue = state.leads.reduce((sum, l) => sum + l.value, 0);
   const activeLeads = state.leads.filter(l => l.stage !== Stage.WON && l.stage !== Stage.LOST).length;
@@ -80,7 +80,11 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {sortedTasks.map((item, idx) => (
-            <div key={idx} className="bg-slate-50 border border-slate-100 p-5 rounded-3xl hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer relative overflow-hidden">
+            <div 
+              key={idx} 
+              onClick={() => openLeadModal(item.leadId, 'tasks')}
+              className="bg-slate-50 border border-slate-100 p-5 rounded-3xl hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer relative overflow-hidden"
+            >
               <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ChevronRight size={14} className="text-blue-400" />
               </div>
@@ -89,8 +93,8 @@ const Dashboard: React.FC = () => {
                   {item.task.priority}
                 </span>
                 <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                  <Calendar size={12} />
-                  {new Date(item.task.targetDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  <Clock size={12} className="text-blue-400" />
+                  Due: {new Date(item.task.targetDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                 </div>
               </div>
               <p className="text-sm font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition-colors">{item.task.title}</p>
@@ -167,7 +171,7 @@ const Dashboard: React.FC = () => {
                <div className="text-center py-20 text-slate-400 italic text-sm">No recent activity</div>
             ) : (
               recentLeads.map(lead => (
-                <div key={lead.id} className="flex gap-4 items-start pb-6 border-b border-slate-100 last:border-0 last:pb-0 group cursor-pointer">
+                <div key={lead.id} onClick={() => openLeadModal(lead.id)} className="flex gap-4 items-start pb-6 border-b border-slate-100 last:border-0 last:pb-0 group cursor-pointer">
                   <img src={`https://ui-avatars.com/api/?name=${lead.name}&background=random`} className="w-12 h-12 rounded-2xl group-hover:scale-105 transition-transform" />
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
