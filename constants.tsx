@@ -21,6 +21,9 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'Dux-Soup',
     lastActivity: new Date().toISOString(),
     notes: 'Interested in AI security protocols.',
+    interactions: [],
+    // Added missing tasks property to satisfy Lead interface
+    tasks: [],
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
@@ -33,6 +36,9 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'Manual',
     lastActivity: new Date().toISOString(),
     notes: 'Looking for a lift to the nearest star system.',
+    interactions: [],
+    // Added missing tasks property to satisfy Lead interface
+    tasks: [],
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
   },
   {
@@ -45,6 +51,9 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'Dux-Soup',
     lastActivity: new Date().toISOString(),
     notes: 'Extermination services proposal pending.',
+    interactions: [],
+    // Added missing tasks property to satisfy Lead interface
+    tasks: [],
     createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
   }
 ];
